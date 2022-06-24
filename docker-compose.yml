@@ -1,0 +1,44 @@
+version: '3'
+
+services:
+    db:
+        image: mysql:5.7
+        command: --default-authentication-plugin=mysql_native_password
+        volumes:
+            - "./.data/db:/var/lib/mysql"
+            - ${SYMFONY_APP_PATH}:/var/www/symfony
+        environment:
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+            MYSQL_DATABASE: ${MYSQL_DATABASE}
+            MYSQL_USER: ${MYSQL_USER}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    php:
+        build:
+            context: php7-fpm
+            args:
+                TIMEZONE: ${TIMEZONE}
+        volumes:
+            - ${SYMFONY_APP_PATH}:/var/www/symfony
+            - ./logs/symfony:/var/www/symfony/var/log
+    yarn:
+        image: node:12
+        volumes:
+            - ${SYMFONY_APP_PATH}:/var/www/symfony
+        ports:
+            - 9001:9000
+        working_dir: /var/www/symfony
+        #command: ["yarn", "install"]
+        command: ["yarn", "dev-server", "--host=0.0.0.0"]
+    nginx:
+        build: nginx
+        ports:
+            - 8080:80
+        volumes:
+            - ${SYMFONY_APP_PATH}:/var/www/symfony
+            - ./logs/nginx/:/var/log/nginx
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        environment:
+            UPLOAD_LIMIT: 300M
+        ports:
+            - 8081:80
